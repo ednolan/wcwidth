@@ -54,8 +54,8 @@ class SetupUpdate(setuptools.Command):
     EAW_IN = os.path.join(HERE, 'data', 'EastAsianWidth.txt')
     UCD_IN = os.path.join(HERE, 'data', 'DerivedGeneralCategory.txt')
 
-    EAW_OUT = os.path.join(HERE, 'wcwidth', 'table_wide.py')
-    ZERO_OUT = os.path.join(HERE, 'wcwidth', 'table_zero.py')
+    EAW_OUT = os.path.join(HERE, 'wcwidth', 'table_wide.h')
+    ZERO_OUT = os.path.join(HERE, 'wcwidth', 'table_zero.h')
 
     README_RST = os.path.join(HERE, 'README.RST')
     README_PATCH_FROM = "the Unicode Standard release files:"
@@ -236,16 +236,21 @@ class SetupUpdate(setuptools.Command):
         import string
         utc_now = datetime.datetime.utcnow()
         indent = 4
+        n_rows = len(table);
         with open(fname, 'w') as fout:
             fout.write(
-                '"""{variable_proper} table. Created by setup.py."""\n'
-                "# Generated: {iso_utc}\n"
-                "# Source: {version}\n"
-                "# Date: {date}\n"
-                "{variable} = (".format(iso_utc=utc_now.isoformat(),
+                "#pragma once\n"
+                "// {variable_proper} table. Created by setup.py.\n"
+                "// Generated: {iso_utc}\n"
+                "// Source: {version}\n"
+                "// Date: {date}\n"
+                "#include <cstdint>\n"
+                "\n"
+                "static constexpr uint32_t {variable} [{n_rows}][2] = {{".format(iso_utc=utc_now.isoformat(),
                                         version=version,
                                         date=date,
                                         variable=variable,
+                                        n_rows=n_rows,
                                         variable_proper=variable.title()))
             for start, end in table:
                 ucs_start, ucs_end = unichr(start), unichr(end)
@@ -260,11 +265,11 @@ class SetupUpdate(setuptools.Command):
                 except ValueError:
                     name_end = u''
                 fout.write('\n' + (' ' * indent))
-                fout.write('({0}, {1},),'.format(hex_start, hex_end))
-                fout.write('  # {0:24s}..{1}'.format(
+                fout.write('{{{0}, {1}}},'.format(hex_start, hex_end))
+                fout.write('  // {0:24s}..{1}'.format(
                     name_start[:24].rstrip() or '(nil)',
                     name_end[:24].rstrip()))
-            fout.write('\n)\n')
+            fout.write('\n};\n')
         print("complete.")
 
 
